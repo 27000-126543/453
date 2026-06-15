@@ -42,6 +42,9 @@ flowchart TD
 | /gene-bank | 基因库页面 - 基因样本、能量核心、药剂 |
 | /incubator | 培养舱页面 - 克隆体配置与实时培养 |
 | /collection | 克隆体图鉴页面 - 已培养克隆体管理 |
+| /arena | 克隆竞技大赛 - 组队、匹配、战斗、结算 |
+| /market | 交易市场 - 挂单、购买、公告、价格建议 |
+| /guild | 公会系统 - 工坊、同步塔、贡献、权限 |
 
 ## 4. 核心数据模型
 
@@ -335,7 +338,6 @@ src/
 ├── components/
 │   ├── layout/
 │   │   ├── Navbar.tsx
-│   │   ├── Sidebar.tsx
 │   │   └── ParticleBackground.tsx
 │   ├── lab/
 │   │   ├── PlayerCard.tsx
@@ -353,19 +355,42 @@ src/
 │   │   ├── ProgressMonitor.tsx
 │   │   ├── PotionInjector.tsx
 │   │   └── EventNotification.tsx
-│   └── collection/
-│       ├── CloneCard.tsx
-│       ├── StatRadar.tsx
-│       ├── TalentDisplay.tsx
-│       └── CloneDetailModal.tsx
+│   ├── collection/
+│   │   ├── CloneCard.tsx
+│   │   ├── StatRadar.tsx
+│   │   ├── TalentDisplay.tsx
+│   │   └── CloneDetailModal.tsx
+│   ├── arena/
+│   │   ├── TeamSetup.tsx
+│   │   ├── MatchDisplay.tsx
+│   │   ├── BattleScene.tsx
+│   │   ├── SkillBar.tsx
+│   │   ├── BattleLog.tsx
+│   │   └── RewardPanel.tsx
+│   ├── market/
+│   │   ├── MarketTabs.tsx
+│   │   ├── ListingCard.tsx
+│   │   ├── SellModal.tsx
+│   │   ├── PriceSuggestion.tsx
+│   │   ├── AnnouncementBar.tsx
+│   │   └── GeneRevolutionBanner.tsx
+│   └── guild/
+│       ├── GuildInfo.tsx
+│       ├── BuildingCard.tsx
+│       ├── ContributionPanel.tsx
+│       ├── MemberList.tsx
+│       ├── ApprovalPanel.tsx
+│       └── PermissionSettings.tsx
 ├── store/
-│   ├── useGameStore.ts
-│   └── persist.ts
+│   └── useGameStore.ts
 ├── engine/
 │   ├── geneCalculator.ts
 │   ├── incubationEngine.ts
 │   ├── talentGenerator.ts
-│   └── eventSystem.ts
+│   ├── eventSystem.ts
+│   ├── battleEngine.ts
+│   ├── tradeEngine.ts
+│   └── guildEngine.ts
 ├── data/
 │   ├── geneSamples.ts
 │   ├── energyCores.ts
@@ -375,15 +400,252 @@ src/
 ├── types/
 │   └── index.ts
 ├── utils/
-│   ├── rarity.ts
-│   ├── random.ts
-│   └── formatters.ts
+│   └── index.ts
 ├── pages/
 │   ├── LabOverview.tsx
 │   ├── GeneBank.tsx
 │   ├── Incubator.tsx
-│   └── Collection.tsx
+│   ├── Collection.tsx
+│   ├── Arena.tsx
+│   ├── Market.tsx
+│   └── Guild.tsx
 ├── App.tsx
 ├── main.tsx
 └── index.css
+```
+
+## 7. 新增核心数据类型
+
+### 7.1 竞技大赛类型
+
+```typescript
+// 战斗状态
+type BattleStatus = 'idle' | 'team_setup' | 'matching' | 'battle' | 'finished';
+
+// 主控对象
+type BattleUnitType = 'player' | 'clone';
+
+// 战斗单位
+interface BattleUnit {
+  id: string;
+  type: BattleUnitType;
+  name: string;
+  race: Race;
+  element: Element;
+  maxHp: number;
+  currentHp: number;
+  stats: Stats;
+  talents: Talent[];
+  skills: Skill[];
+  cooldowns: { [skillId: string]: number };
+  syncRate: number;
+  isActive: boolean;
+}
+
+// 战队
+interface BattleTeam {
+  player: BattleUnit;
+  clones: BattleUnit[];
+  activeUnitId: string;
+  totalPower: number;
+}
+
+// 战斗日志
+interface BattleLogEntry {
+  id: string;
+  timestamp: number;
+  type: 'attack' | 'skill' | 'heal' | 'switch' | 'special' | 'system';
+  source: string;
+  target: string;
+  message: string;
+  damage?: number;
+  heal?: number;
+}
+
+// 战斗奖励
+interface BattleReward {
+  points: number;
+  geneFragments: { sample: GeneSample; quantity: number }[];
+  gold: number;
+  exp: number;
+}
+
+// 竞技状态
+interface ArenaState {
+  status: BattleStatus;
+  selectedCloneIds: string[];
+  myTeam: BattleTeam | null;
+  enemyTeam: BattleTeam | null;
+  battleLogs: BattleLogEntry[];
+  currentRound: number;
+  winner: 'player' | 'enemy' | null;
+  reward: BattleReward | null;
+  totalPoints: number;
+  matchCount: number;
+  winCount: number;
+}
+```
+
+### 7.2 交易市场类型
+
+```typescript
+// 商品类型
+type ListingType = 'clone' | 'gene';
+
+// 挂单商品
+interface MarketListing {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  type: ListingType;
+  item: Clone | GeneSample;
+  price: number;
+  createdAt: number;
+  expiresAt: number;
+}
+
+// 成交记录
+interface TradeRecord {
+  id: string;
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  sellerName: string;
+  type: ListingType;
+  itemName: string;
+  itemRarity: Rarity;
+  price: number;
+  timestamp: number;
+}
+
+// 价格建议
+interface PriceSuggestion {
+  min: number;
+  max: number;
+  average: number;
+  sevenDayAvg: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+// 基因革命事件
+interface GeneRevolutionEvent {
+  id: string;
+  startTime: number;
+  endTime: number;
+  successRateBonus: number;
+  triggeredBy: string;
+  itemName: string;
+}
+
+// 市场状态
+interface MarketState {
+  listings: MarketListing[];
+  myListings: MarketListing[];
+  tradeHistory: TradeRecord[];
+  announcements: string[];
+  geneRevolution: GeneRevolutionEvent | null;
+}
+```
+
+### 7.3 公会系统类型
+
+```typescript
+// 公会职位
+type GuildRank = 'president' | 'vice_president' | 'tech_officer' | 'member';
+
+// 权限定义
+interface GuildPermissions {
+  canApproveJoin: boolean;
+  canKickMember: boolean;
+  canEditInfo: boolean;
+  canUpgradeBuilding: boolean;
+  canManagePermissions: boolean;
+}
+
+// 公会成员
+interface GuildMember {
+  id: string;
+  name: string;
+  rank: GuildRank;
+  permissions: GuildPermissions;
+  contribution: {
+    gold: number;
+    materials: number;
+    total: number;
+  };
+  joinDate: number;
+  lastActive: number;
+}
+
+// 公会建筑
+interface GuildBuilding {
+  id: 'cloning_workshop' | 'sync_tower';
+  name: string;
+  level: number;
+  currentExp: number;
+  requiredExp: number;
+  bonus: {
+    successRate: number;
+    syncEfficiency: number;
+  };
+  description: string;
+}
+
+// 入会申请
+interface GuildJoinRequest {
+  id: string;
+  playerId: string;
+  playerName: string;
+  playerLevel: number;
+  message: string;
+  timestamp: number;
+}
+
+// 公会状态
+interface GuildState {
+  id: string | null;
+  name: string | null;
+  level: number;
+  announcement: string;
+  members: GuildMember[];
+  buildings: GuildBuilding[];
+  joinRequests: GuildJoinRequest[];
+  myRank: GuildRank | null;
+  myPermissions: GuildPermissions | null;
+}
+```
+
+## 8. 新增核心引擎
+
+### 8.1 战斗引擎 (battleEngine.ts)
+
+- **calculateTeamPower(team: BattleTeam): number** - 综合战力计算
+- **findMatch(myTeam: BattleTeam): BattleTeam** - 自动匹配对手
+- **createBattleUnit(source: Player | Clone, type: BattleUnitType): BattleUnit** - 创建战斗单位
+- **processBattleTick(battle: BattleState): BattleState** - 每帧战斗逻辑
+- **executeSkill(attacker: BattleUnit, skill: Skill, target: BattleUnit, battle: BattleState): { damage: number; log: BattleLogEntry }** - 技能执行
+- **switchActiveUnit(team: BattleTeam, newUnitId: string): BattleTeam** - 切换主控
+- **useConsciousnessTransfer(team: BattleTeam): BattleTeam** - 意识转移技能
+- **useGeneBurst(team: BattleTeam, target: BattleUnit): { damage: number; logs: BattleLogEntry[] }** - 基因爆发技能
+- **calculateReward(winner: 'player' | 'enemy', battle: BattleState): BattleReward** - 奖励计算
+
+### 8.2 交易引擎 (tradeEngine.ts)
+
+- **createListing(seller: Player, item: Clone | GeneSample, price: number): MarketListing** - 创建挂单
+- **cancelListing(listingId: string, sellerId: string): boolean** - 撤销挂单
+- **getPriceSuggestion(item: Clone | GeneSample, history: TradeRecord[]): PriceSuggestion** - 价格建议
+- **executeTrade(buyer: Player, listing: MarketListing): { success: boolean; record: TradeRecord | null }** - 执行交易
+- **checkGeneRevolution(records: TradeRecord[]): GeneRevolutionEvent | null** - 检查基因革命触发
+- **getSevenDayAverage(itemType: string, rarity: Rarity, history: TradeRecord[]): number** - 7天均价
+
+### 8.3 公会引擎 (guildEngine.ts)
+
+- **createGuild(president: Player, name: string): GuildState** - 创建公会
+- **requestJoin(guildId: string, player: Player, message: string): GuildJoinRequest** - 申请入会
+- **approveJoin(request: GuildJoinRequest, member: GuildMember): boolean** - 审批入会
+- **contributeResources(memberId: string, gold: number, materials: number): { buildings: GuildBuilding[]; member: GuildMember }** - 贡献升级
+- **upgradeBuilding(building: GuildBuilding): GuildBuilding** - 建筑升级
+- **getPermissionsByRank(rank: GuildRank): GuildPermissions** - 根据职位获取权限
+- **setMemberRank(memberId: string, newRank: GuildRank, operator: GuildMember): GuildMember | null** - 设置成员职位
+- **getGuildBonuses(guild: GuildState): { successRateBonus: number; syncBonus: number }** - 获取公会加成
 ```

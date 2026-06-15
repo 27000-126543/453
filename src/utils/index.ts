@@ -2,8 +2,8 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export type Rarity = "common" | "rare" | "epic" | "legendary";
-export type Race = "human" | "elf" | "dwarf" | "orc" | "undead" | "dragonborn";
-export type Element = "fire" | "water" | "earth" | "wind" | "light" | "dark" | "arcane";
+export type Race = "human" | "elf" | "orc" | "dragon" | "undead" | "demon";
+export type Element = "fire" | "water" | "wind" | "earth" | "light" | "dark" | "chaos";
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
@@ -58,10 +58,10 @@ export function getRaceName(race: string): string {
   const raceMap: Record<string, string> = {
     human: "人类",
     elf: "精灵",
-    dwarf: "矮人",
     orc: "兽人",
+    dragon: "龙族",
     undead: "亡灵",
-    dragonborn: "龙裔",
+    demon: "魔族",
   };
   return raceMap[race.toLowerCase()] ?? race;
 }
@@ -70,11 +70,11 @@ export function getElementName(element: string): string {
   const elementMap: Record<string, string> = {
     fire: "火",
     water: "水",
-    earth: "土",
     wind: "风",
+    earth: "土",
     light: "光",
     dark: "暗",
-    arcane: "奥术",
+    chaos: "混沌",
   };
   return elementMap[element.toLowerCase()] ?? element;
 }
