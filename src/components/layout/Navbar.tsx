@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FlaskConical, Dna, Beaker, BookOpen, Coins, Sparkles, Star } from 'lucide-react';
+import { FlaskConical, Dna, Beaker, BookOpen, Coins, Sparkles, Star, Swords, ShoppingCart, Building2 } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import { cn } from '@/utils';
 
@@ -8,6 +8,9 @@ const navItems = [
   { to: '/gene-bank', label: '基因库', Icon: Dna },
   { to: '/incubator', label: '培养舱', Icon: Beaker },
   { to: '/collection', label: '克隆图鉴', Icon: BookOpen },
+  { to: '/arena', label: '竞技大赛', Icon: Swords },
+  { to: '/market', label: '交易市场', Icon: ShoppingCart },
+  { to: '/guild', label: '公会系统', Icon: Building2 },
 ];
 
 export default function Navbar() {

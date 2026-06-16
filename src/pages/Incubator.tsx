@@ -21,12 +21,21 @@ export default function Incubator() {
     geneSamples,
     energyCores,
     skillLevel,
+    market,
     setGeneSlot,
     setMainCore,
     setAuxCore,
     startCultivation,
     finalizeClone,
+    getGuildSuccessRateBonus,
+    getGuildSyncBonus,
   } = useGameStore();
+
+  const guildSuccessBonus = getGuildSuccessRateBonus();
+  const guildSyncBonus = getGuildSyncBonus();
+  const hasGeneRevolution = market.geneRevolution !== null;
+  const geneRevoBonus = hasGeneRevolution ? (market.geneRevolution!.successRateBonus * 100) : 0;
+  const totalSuccessBonus = guildSuccessBonus + geneRevoBonus;
 
   const [activePanel, setActivePanel] = useState<SelectionPanel>(null);
   const isConfiguring = currentSession.status === 'idle' || currentSession.status === 'configuring';
@@ -266,6 +275,44 @@ export default function Incubator() {
         </div>
 
         <div className={cn('flex flex-col gap-6')}>
+          {(totalSuccessBonus > 0 || guildSyncBonus > 0 || hasGeneRevolution) && (
+            <div className={cn('glass-card p-5 flex flex-col gap-3')}>
+              <h3 className={cn(
+                'font-display text-lg text-arcane-gold text-shadow-gold tracking-wider text-center border-b border-magic-500/20 pb-3'
+              )}>
+                ✨ 生效加成
+              </h3>
+
+              {guildSuccessBonus > 0 && (
+                <div className={cn('flex justify-between items-center p-2 rounded-lg bg-magic-950/50')}>
+                  <span className={cn('text-sm text-gray-300')}>🏭 联合克隆工坊</span>
+                  <span className={cn('text-sm text-green-400 font-display')}>+{guildSuccessBonus.toFixed(1)}% 成功率</span>
+                </div>
+              )}
+
+              {guildSyncBonus > 0 && (
+                <div className={cn('flex justify-between items-center p-2 rounded-lg bg-magic-950/50')}>
+                  <span className={cn('text-sm text-gray-300')}>🗼 意识同步塔</span>
+                  <span className={cn('text-sm text-cyan-400 font-display')}>+{guildSyncBonus.toFixed(1)}% 同步效率</span>
+                </div>
+              )}
+
+              {hasGeneRevolution && (
+                <div className={cn('flex justify-between items-center p-2 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30')}>
+                  <span className={cn('text-sm text-amber-300')}>🔥 基因革命</span>
+                  <span className={cn('text-sm text-amber-400 font-display')}>+{geneRevoBonus.toFixed(1)}% 成功率</span>
+                </div>
+              )}
+
+              {totalSuccessBonus > 0 && (
+                <div className={cn('pt-2 border-t border-magic-500/20 flex justify-between items-center')}>
+                  <span className={cn('text-xs text-gray-400')}>总成功率加成</span>
+                  <span className={cn('text-sm text-arcane-gold font-display')}>+{totalSuccessBonus.toFixed(1)}%</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className={cn('glass-card p-5 flex flex-col gap-4')}>
             <h3 className={cn(
               'font-display text-lg text-magic-300 text-shadow-purple tracking-wider text-center border-b border-magic-500/20 pb-3'
